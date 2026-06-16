@@ -7,8 +7,8 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
     billingdate: '', status: inv.status || '', name: inv.name || '',
     address: inv.addr || '', attn: inv.attn || ''
   })
-  const [rows, setRows]     = useState([])
-  const [error, setError]   = useState('')
+  const [rows, setRows] = useState([])
+  const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -33,7 +33,7 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
         return `${parts[2]}-${parts[1]}-${parts[0]}`
       })(),
       desc: li.description || li.desc || li.item || '',
-      qty:  String(parseFloat(li.qty || li.quantity || li.units || 1) || 1),
+      qty: String(parseFloat(li.qty || li.quantity || li.units || 1) || 1),
       rate: String(parseFloat(li.unit_price || li.price || li.rate || li.unit_price || 0) || 0),
     }))
 
@@ -60,7 +60,7 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
     const { billingdate, status, name } = form
     if (!billingdate || !status || !name) { setError('Please fill all required fields.'); return }
 
-    const validRows = rows.filter(r => r.desc && r.qty && parseFloat(r.qty) > 0)
+    const validRows = rows.filter(r => (r.desc || r.description) && parseFloat(r.qty) > 0)
     if (!validRows.length) { setError('At least one line item is required.'); return }
 
     const [by, bm, bd] = billingdate.split('-')
@@ -77,25 +77,29 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
       if (e1) throw e1
 
       // Replace line items
-      await sb.from('line_items').delete().eq('invoice_number', inv.number ?? inv.invoice_number)
+      const invNum = inv.number ?? inv.invoice_number
+      await sb.from('line_items').delete().eq('invoice_number', invNum)
       if (validRows.length) {
         const liData = validRows.map(r => {
           const dateRaw = r.date
           let dateFmt = ''
           if (dateRaw) { const [y2, m2, d2] = dateRaw.split('-'); dateFmt = `${d2}-${m2}-${y2}` }
+          const desc = r.desc || r.description || ''
+          const qty = parseFloat(r.qty) || 1
+          const price = parseFloat(r.rate || r.unit_price || 0)
           return {
-            invoice_number: inv.number,
-            date: dateFmt, li_date: dateFmt,
-            description: r.desc, desc: r.desc,
-            qty: parseFloat(r.qty), quantity: parseFloat(r.qty),
-            price: parseFloat(r.rate || 0), rate: parseFloat(r.rate || 0),
+            invoice_number: invNum,
+            date: dateFmt,
+            description: desc,
+            qty: qty,
+            unit_price: price,
           }
         })
         await sb.from('line_items').insert(liData)
       }
 
-      setSuccess('Invoice updated successfully!')
-      onSaved()
+      setSuccess('✅ Invoice updated successfully!')
+      setTimeout(() => { onSaved() }, 1500)
     } catch (e) {
       setError('Update failed: ' + (e.message || 'error'))
     }
@@ -111,7 +115,7 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
         </div>
         <div style={{ padding: '1.5rem' }}>
           {success && <div className="alert-success">✅ {success}</div>}
-          {error   && <div className="alert-error">❌ {error}</div>}
+          {error && <div className="alert-error">❌ {error}</div>}
 
           <div className="pr-card">
             <div className="pr-card-title">Invoice Details</div>

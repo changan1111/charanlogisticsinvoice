@@ -20,9 +20,9 @@ const DEFAULT_CFG = {
 }
 
 export default function App() {
-  const [user, setUser]       = useState(null)
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [panel, setPanel]     = useState('invoices')
+  const [panel, setPanel] = useState('invoices')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const mainRef = useRef(null)
   const changePanel = (p) => {
@@ -31,19 +31,19 @@ export default function App() {
     setTimeout(() => { if (mainRef.current) mainRef.current.scrollTop = 0 }, 50)
   }
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [cfg, setCfg]         = useState(() => {
+  const [cfg, setCfg] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cl_cfg')) || DEFAULT_CFG } catch { return DEFAULT_CFG }
   })
 
   // Invoice data shared across panels
-  const [invoices, setInvoices]   = useState([])
+  const [invoices, setInvoices] = useState([])
   const [lineItemCache, setLineItemCache] = useState({})
   const [invLoading, setInvLoading] = useState(false)
 
   // Modals
-  const [viewInv, setViewInv]       = useState(null)  // invoice to view
-  const [editInv, setEditInv]       = useState(null)  // invoice to edit
-  const [chartOpen, setChartOpen]   = useState(false)
+  const [viewInv, setViewInv] = useState(null)  // invoice to view
+  const [editInv, setEditInv] = useState(null)  // invoice to edit
+  const [chartOpen, setChartOpen] = useState(false)
 
   // Auth
   useEffect(() => {
@@ -95,10 +95,10 @@ export default function App() {
       const { data, error } = await sb.from('line_items').select('*').in('invoice_number', missing).limit(5000)
       if (error) throw error
       const byNum = {}
-      ;(data || []).forEach(li => {
-        if (!byNum[li.invoice_number]) byNum[li.invoice_number] = []
-        byNum[li.invoice_number].push(li)
-      })
+        ; (data || []).forEach(li => {
+          if (!byNum[li.invoice_number]) byNum[li.invoice_number] = []
+          byNum[li.invoice_number].push(li)
+        })
       setLineItemCache(prev => ({ ...prev, ...byNum }))
     } catch (e) {
       console.error('Line items fetch error', e)
@@ -125,7 +125,7 @@ export default function App() {
   return (
     <div className="app-root">
       <div className="header-banner">
-        <img src={`${import.meta.env.BASE_URL}header.png`} alt="Header" onError={e => e.target.style.display='none'} />
+        <img src={`${import.meta.env.BASE_URL}header.png`} alt="Header" onError={e => e.target.style.display = 'none'} />
       </div>
 
       <Nav
@@ -198,6 +198,8 @@ export default function App() {
           cfg={cfg}
           onClose={() => setEditInv(null)}
           onSaved={async () => {
+            const invNum = editInv.number ?? editInv.invoice_number
+            setLineItemCache(prev => { const n = { ...prev }; delete n[invNum]; return n })
             await loadInvoices()
             setEditInv(null)
           }}
