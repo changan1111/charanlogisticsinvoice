@@ -20,9 +20,9 @@ const DEFAULT_CFG = {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const [panel, setPanel] = useState('invoices')
+  const [panel, setPanel]     = useState('invoices')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const mainRef = useRef(null)
   const changePanel = (p) => {
@@ -31,19 +31,19 @@ export default function App() {
     setTimeout(() => { if (mainRef.current) mainRef.current.scrollTop = 0 }, 50)
   }
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [cfg, setCfg] = useState(() => {
+  const [cfg, setCfg]         = useState(() => {
     try { return JSON.parse(localStorage.getItem('cl_cfg')) || DEFAULT_CFG } catch { return DEFAULT_CFG }
   })
 
   // Invoice data shared across panels
-  const [invoices, setInvoices] = useState([])
+  const [invoices, setInvoices]   = useState([])
   const [lineItemCache, setLineItemCache] = useState({})
   const [invLoading, setInvLoading] = useState(false)
 
   // Modals
-  const [viewInv, setViewInv] = useState(null)  // invoice to view
-  const [editInv, setEditInv] = useState(null)  // invoice to edit
-  const [chartOpen, setChartOpen] = useState(false)
+  const [viewInv, setViewInv]       = useState(null)  // invoice to view
+  const [editInv, setEditInv]       = useState(null)  // invoice to edit
+  const [chartOpen, setChartOpen]   = useState(false)
 
   // Auth
   useEffect(() => {
@@ -95,10 +95,10 @@ export default function App() {
       const { data, error } = await sb.from('line_items').select('*').in('invoice_number', missing).limit(5000)
       if (error) throw error
       const byNum = {}
-        ; (data || []).forEach(li => {
-          if (!byNum[li.invoice_number]) byNum[li.invoice_number] = []
-          byNum[li.invoice_number].push(li)
-        })
+      ;(data || []).forEach(li => {
+        if (!byNum[li.invoice_number]) byNum[li.invoice_number] = []
+        byNum[li.invoice_number].push(li)
+      })
       setLineItemCache(prev => ({ ...prev, ...byNum }))
     } catch (e) {
       console.error('Line items fetch error', e)
@@ -125,7 +125,7 @@ export default function App() {
   return (
     <div className="app-root">
       <div className="header-banner">
-        <img src={`${import.meta.env.BASE_URL}header.png`} alt="Header" onError={e => e.target.style.display = 'none'} />
+        <img src={`${import.meta.env.BASE_URL}header.png`} alt="Header" onError={e => e.target.style.display='none'} />
       </div>
 
       <Nav
@@ -184,9 +184,27 @@ export default function App() {
           onClose={() => setViewInv(null)}
           onEdit={(inv) => { setEditInv(inv); setViewInv(null) }}
           onMarkPaid={async (inv) => {
-            await sb.from('clients').update({ status: 'paid' }).eq('invoice_number', inv.number ?? inv.invoice_number)
-            await loadInvoices()
-            setViewInv(null)
+            const displayTotal = (() => {
+              const items = lineItemCache[inv.number] || inv.items || []
+              const t = items.reduce((s, li) => s + (parseFloat(li.qty || li.quantity || 1)) * (parseFloat(li.unit_price || li.price || li.rate || 0)), 0)
+              return t > 0 ? t : (parseFloat(inv.total) || 0)
+            })()
+            const password = window.prompt(`🔐 Enter your login password to mark Invoice #${inv.number} as Paid:\n\nClient: ${inv.name}\nAmount: S$ ${displayTotal.toFixed(2)}`)
+            if (password === null) return
+            if (!password.trim()) { window.alert('❌ Password cannot be empty.'); return }
+            const { data: { user } } = await sb.auth.getUser()
+            if (!user) { window.alert('❌ Session expired. Please log in again.'); return }
+            const { error: authError } = await sb.auth.signInWithPassword({ email: user.email, password: password.trim() })
+            if (authError) { window.alert('❌ Incorrect password. Access denied.'); return }
+            const confirmed = window.confirm(`✅ Password verified!\n\nMark Invoice #${inv.number} (${inv.name}) as PAID?\n\nAmount: S$ ${displayTotal.toFixed(2)}`)
+            if (!confirmed) return
+            try {
+              const { error } = await sb.from('clients').update({ status: 'paid' }).eq('invoice_number', inv.number ?? inv.invoice_number)
+              if (error) throw error
+              window.alert(`✅ Invoice #${inv.number} marked as Paid!\n\nClient: ${inv.name}\nAmount: S$ ${displayTotal.toFixed(2)}`)
+              await loadInvoices()
+              setViewInv(null)
+            } catch(e) { window.alert('❌ Update failed: ' + e.message) }
           }}
         />
       )}
@@ -199,6 +217,7 @@ export default function App() {
           onClose={() => setEditInv(null)}
           onSaved={async () => {
             const invNum = editInv.number ?? editInv.invoice_number
+            // Clear cache for this invoice so fresh data loads
             setLineItemCache(prev => { const n = { ...prev }; delete n[invNum]; return n })
             await loadInvoices()
             setEditInv(null)
