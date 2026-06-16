@@ -577,3 +577,80 @@ tbody tr:hover td { background: var(--ice); cursor: pointer; }
   #qic-panel { width: calc(100vw - 24px); right: 12px; bottom: 80px; max-height: 70vh; }
   #qic-fab { bottom: 16px; right: 16px; }
 }
+
+/* ── MOBILE BOTTOM TAB BAR ── */
+.bottom-tab-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-tab-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 500;
+    background: var(--ink);
+    border-top: 1px solid rgba(255,255,255,.1);
+    height: 60px;
+    padding: 0;
+    box-shadow: 0 -4px 20px rgba(11,29,58,.3);
+  }
+
+  .bottom-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 4px;
+    color: rgba(255,255,255,.5);
+    transition: color .2s;
+  }
+
+  .bottom-tab.active {
+    color: var(--gold);
+  }
+
+  .bottom-tab-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .bottom-tab-label {
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  /* Add active indicator line on top */
+  .bottom-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 24px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 0 0 2px 2px;
+  }
+
+  .bottom-tab { position: relative; }
+
+  /* Push content up so it doesn't hide behind tab bar */
+  .content-area {
+    padding-bottom: 60px !important;
+  }
+
+  /* Hide hamburger menu on mobile since we have bottom tabs */
+  .nav-hamburger { display: none !important; }
+
+  /* Hide sidebar on mobile completely */
+  .sidebar { display: none !important; }
+  .sb-overlay { display: none !important; }
+}
