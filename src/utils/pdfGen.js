@@ -293,11 +293,6 @@ export async function makePayrollPDF(r) {
   doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(100, 90, 70)
   doc.text(words(net), 105, wordsY, { align: 'center' })
 
-  if (prQr) {
-    const qsz = 28, qx = 210 - 8 - qsz, qy = 297 - 22 - qsz - 4
-    doc.addImage(prQr.d, prQr.ext, qx, qy, qsz, qsz, '', 'NONE')
-  }
-
   return doc.output('blob')
 }
 
