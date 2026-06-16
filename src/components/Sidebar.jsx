@@ -4,6 +4,7 @@ const TAB_ITEMS = [
   { id: 'payroll',    icon: '💰', label: 'Payroll' },
   { id: 'quotation',  icon: '📄', label: 'Quotation' },
   { id: 'whatsapp',   icon: '💬', label: 'WhatsApp' },
+  { id: '__signout__',icon: '🚪', label: 'Sign Out' },
 ]
 
 export default function Sidebar({ active, onSelect, onSignOut, open }) {
@@ -46,8 +47,8 @@ export default function Sidebar({ active, onSelect, onSignOut, open }) {
         {TAB_ITEMS.map(it => (
           <button
             key={it.id}
-            className={`bottom-tab${active === it.id ? ' active' : ''}`}
-            onClick={() => onSelect(it.id)}
+            className={`bottom-tab${active === it.id ? ' active' : ''} ${it.id === '__signout__' ? 'signout-tab' : ''}`}
+            onClick={() => it.id === '__signout__' ? onSignOut() : onSelect(it.id)}
           >
             <span className="bottom-tab-icon">{it.icon}</span>
             <span className="bottom-tab-label">{it.label}</span>

@@ -593,64 +593,95 @@ tbody tr:hover td { background: var(--ice); cursor: pointer; }
     z-index: 500;
     background: var(--ink);
     border-top: 1px solid rgba(255,255,255,.1);
-    height: 60px;
+    height: 62px;
     padding: 0;
     box-shadow: 0 -4px 20px rgba(11,29,58,.3);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .bottom-tab-bar::-webkit-scrollbar {
+    display: none;
   }
 
   .bottom-tab {
-    flex: 1;
+    flex: 0 0 72px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
     background: none;
     border: none;
     cursor: pointer;
     padding: 6px 4px;
     color: rgba(255,255,255,.5);
     transition: color .2s;
+    position: relative;
+    min-width: 72px;
   }
 
   .bottom-tab.active {
     color: var(--gold);
   }
 
-  .bottom-tab-icon {
-    font-size: 1.2rem;
-    line-height: 1;
-  }
-
-  .bottom-tab-label {
-    font-size: .6rem;
-    font-weight: 600;
-    letter-spacing: .3px;
-    font-family: 'Outfit', sans-serif;
-  }
-
-  /* Add active indicator line on top */
   .bottom-tab.active::before {
     content: '';
     position: absolute;
     top: 0;
-    width: 24px;
-    height: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 2.5px;
     background: var(--gold);
-    border-radius: 0 0 2px 2px;
+    border-radius: 0 0 3px 3px;
   }
 
-  .bottom-tab { position: relative; }
+  .bottom-tab.signout-tab {
+    color: rgba(255, 100, 100, .6);
+  }
 
-  /* Push content up so it doesn't hide behind tab bar */
+  .bottom-tab.signout-tab:hover {
+    color: #ff6464;
+  }
+
+  .bottom-tab-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .bottom-tab-label {
+    font-size: .58rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+    font-family: 'Outfit', sans-serif;
+    white-space: nowrap;
+  }
+
+  /* Push content up so tab bar doesn't cover it */
   .content-area {
-    padding-bottom: 60px !important;
+    padding-bottom: 62px !important;
   }
 
-  /* Hide hamburger menu on mobile since we have bottom tabs */
+  /* Move FAB above tab bar with extra space */
+  #qic-fab {
+    bottom: 80px !important;
+    right: 16px !important;
+  }
+
+  #qic-panel {
+    bottom: 150px !important;
+    right: 12px !important;
+    width: calc(100vw - 24px) !important;
+    max-height: 65vh !important;
+  }
+
+  /* Hide hamburger — bottom tabs handle nav */
   .nav-hamburger { display: none !important; }
 
-  /* Hide sidebar on mobile completely */
+  /* Hide desktop sidebar on mobile */
   .sidebar { display: none !important; }
   .sb-overlay { display: none !important; }
 }
