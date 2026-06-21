@@ -12,9 +12,12 @@ export default function QuickInvoiceFAB({ invoices, cfg, onSaved }) {
   const [inputType, setInputType] = useState('text')
   const [inputPlaceholder, setInputPlaceholder] = useState('Type here…')
   const [badge, setBadge] = useState(true)
+  const [fabPos, setFabPos] = useState(null)
   const qRef = useRef(initState())
   const msgsRef = useRef(null)
   const inputRef = useRef(null)
+  const fabRef = useRef(null)
+  const dragState = useRef({ active: false, moved: false, startX: 0, startY: 0, origX: 0, origY: 0 })
 
   const scrollBottom = () => setTimeout(() => { if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight }, 60)
 
@@ -38,6 +41,66 @@ export default function QuickInvoiceFAB({ invoices, cfg, onSaved }) {
   const restart = () => { setMsgs([]); qRef.current = initState(); start() }
   useEffect(() => { if (open && msgs.length === 0) start() }, [open])
   const handleSend = () => { const val = input.trim(); if (!val) return; setInput(''); process(val) }
+
+  const saveFabPos = (pos) => {
+    setFabPos(pos)
+  }
+
+  const clampPos = (x, y, width, height) => {
+    const maxX = Math.max(0, window.innerWidth - width)
+    const maxY = Math.max(0, window.innerHeight - height)
+    return { x: Math.min(Math.max(0, x), maxX), y: Math.min(Math.max(0, y), maxY) }
+  }
+
+  const handlePointerDown = (e) => {
+    if (e.button !== 0) return
+    const rect = fabRef.current?.getBoundingClientRect()
+    if (!rect) return
+    dragState.current = {
+      active: true,
+      moved: false,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: rect.left,
+      origY: rect.top,
+    }
+    fabRef.current.setPointerCapture(e.pointerId)
+  }
+
+  const handlePointerMove = (e) => {
+    if (!dragState.current.active) return
+    const dx = e.clientX - dragState.current.startX
+    const dy = e.clientY - dragState.current.startY
+    if (!dragState.current.moved && Math.hypot(dx, dy) < 6) return
+    dragState.current.moved = true
+    const rect = fabRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const next = clampPos(dragState.current.origX + dx, dragState.current.origY + dy, rect.width, rect.height)
+    setFabPos(next)
+  }
+
+  const handlePointerUp = (e) => {
+    if (!dragState.current.active) return
+    dragState.current.active = false
+    fabRef.current?.releasePointerCapture(e.pointerId)
+    if (dragState.current.moved) {
+      saveFabPos(fabPos || { x: 0, y: 0 })
+    }
+  }
+
+  const handlePointerCancel = (e) => {
+    if (!dragState.current.active) return
+    dragState.current.active = false
+    fabRef.current?.releasePointerCapture(e.pointerId)
+  }
+
+  const handleClick = () => {
+    if (dragState.current.moved) {
+      dragState.current.moved = false
+      return
+    }
+    setOpen(o => !o)
+  }
 
   // Called when user picks a client name from the suggestion list
   const pickClient = async (name) => {
@@ -249,7 +312,19 @@ export default function QuickInvoiceFAB({ invoices, cfg, onSaved }) {
 
   return (
     <>
-      <button id="qic-fab" onClick={() => setOpen(o => !o)} title="Quick Invoice">
+      <button
+        id="qic-fab"
+        ref={fabRef}
+        draggable="false"
+        onDragStart={e => e.preventDefault()}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onClick={handleClick}
+        title="Quick Invoice"
+        style={fabPos ? { left: fabPos.x, top: fabPos.y, right: 'auto', bottom: 'auto' } : undefined}
+      >
         🧾
         {badge && <span className="qic-badge">1</span>}
       </button>

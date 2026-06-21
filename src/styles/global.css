@@ -469,10 +469,14 @@ tbody tr:hover td { background: var(--ice); cursor: pointer; }
   background: linear-gradient(135deg, var(--navy), var(--mid));
   border: none; color: white; font-size: 1.5rem;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: 0 4px 20px rgba(11,29,58,.4);
+  cursor: grab; box-shadow: 0 4px 20px rgba(11,29,58,.4);
   transition: all .2s;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 #qic-fab:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(11,29,58,.5); }
+#qic-fab:active { cursor: grabbing; }
 .qic-badge { position: absolute; top: -4px; right: -4px; background: #e53935; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: .65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; }
 #qic-panel {
   position: fixed; bottom: 90px; right: 24px; z-index: 600;
