@@ -8,7 +8,6 @@ import PayrollPanel from './pages/PayrollPanel'
 import QuotationPanel from './pages/QuotationPanel'
 import WhatsAppPanel from './pages/WhatsAppPanel'
 import AddInvoicePanel from './pages/AddInvoicePanel'
-import HelperPanel from './pages/HelperPanel'
 import InvoiceModal from './components/InvoiceModal'
 import EditInvoiceModal from './components/EditInvoiceModal'
 import ChartModal from './components/ChartModal'
@@ -39,7 +38,6 @@ export default function App() {
   // Invoice data shared across panels
   const [invoices, setInvoices]   = useState([])
   const [lineItemCache, setLineItemCache] = useState({})
-  const [prefillInvoice, setPrefillInvoice] = useState(null)
   const [invLoading, setInvLoading] = useState(false)
 
   // Modals
@@ -172,13 +170,7 @@ export default function App() {
             <AddInvoicePanel
               cfg={cfg}
               onSaved={() => { loadInvoices(); changePanel('invoices') }}
-              prefill={prefillInvoice}
               invoices={invoices}
-            />
-          )}
-          {panel === 'helper' && (
-            <HelperPanel
-              onSendToAdd={(data) => { setPrefillInvoice(data); changePanel('addinvoice') }}
             />
           )}
         </div>
