@@ -1,5 +1,6 @@
 const TAB_ITEMS = [
   { id: 'invoices',   icon: '📋', label: 'Invoices' },
+  { id: 'helper',     icon: '🧾', label: 'Kaira/JIT Helper' },
   { id: 'addinvoice', icon: '➕', label: 'Add' },
   { id: 'payroll',    icon: '💰', label: 'Payroll' },
   { id: 'quotation',  icon: '📄', label: 'Quotation' },
@@ -19,6 +20,7 @@ export default function Sidebar({ active, onSelect, onSignOut, open }) {
     { id: 'quotation',   icon: '📄', label: 'Quotation' },
     { id: 'whatsapp',    icon: '💬', label: 'WhatsApp' },
     { id: 'addinvoice',  icon: '➕', label: 'Add Invoice' },
+    { id: 'helper',       icon: '🧾', label: 'Kaira/JIT Helper' },
   ]
 
   return (

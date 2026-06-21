@@ -38,6 +38,16 @@ jobs:
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
         run: npm run build
 
+      - name: Inject Supabase credentials into login.html
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -f dist/login.html ]; then
+            sed -i "s|%%SUPABASE_URL%%|${VITE_SUPABASE_URL}|g" dist/login.html
+            sed -i "s|%%SUPABASE_ANON_KEY%%|${VITE_SUPABASE_ANON_KEY}|g" dist/login.html
+          fi
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
