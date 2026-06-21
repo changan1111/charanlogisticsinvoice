@@ -8,7 +8,7 @@ import PayrollPanel from './pages/PayrollPanel'
 import QuotationPanel from './pages/QuotationPanel'
 import WhatsAppPanel from './pages/WhatsAppPanel'
 import AddInvoicePanel from './pages/AddInvoicePanel'
-import HelperPanel from './pages/HelperPanel'
+import ExcelImportHelper from './pages/ExcelImportHelper'
 import InvoiceModal from './components/InvoiceModal'
 import EditInvoiceModal from './components/EditInvoiceModal'
 import ChartModal from './components/ChartModal'
@@ -39,13 +39,13 @@ export default function App() {
   // Invoice data shared across panels
   const [invoices, setInvoices]   = useState([])
   const [lineItemCache, setLineItemCache] = useState({})
-  const [prefillInvoice, setPrefillInvoice] = useState(null)
   const [invLoading, setInvLoading] = useState(false)
 
   // Modals
   const [viewInv, setViewInv]       = useState(null)  // invoice to view
   const [editInv, setEditInv]       = useState(null)  // invoice to edit
   const [chartOpen, setChartOpen]   = useState(false)
+  const [importPrefill, setImportPrefill] = useState(null) // data sent from Excel helper to Add Invoice
 
   // Auth
   useEffect(() => {
@@ -168,17 +168,21 @@ export default function App() {
           {panel === 'payroll' && <PayrollPanel cfg={cfg} />}
           {panel === 'quotation' && <QuotationPanel cfg={cfg} />}
           {panel === 'whatsapp' && <WhatsAppPanel />}
+          {panel === 'excelimport' && (
+            <ExcelImportHelper
+              onSendToInvoice={(data) => {
+                setImportPrefill(data)
+                changePanel('addinvoice')
+              }}
+            />
+          )}
           {panel === 'addinvoice' && (
             <AddInvoicePanel
               cfg={cfg}
               onSaved={() => { loadInvoices(); changePanel('invoices') }}
-              prefill={prefillInvoice}
               invoices={invoices}
-            />
-          )}
-          {panel === 'helper' && (
-            <HelperPanel
-              onSendToAdd={(data) => { setPrefillInvoice(data); changePanel('addinvoice') }}
+              prefill={importPrefill}
+              onPrefillConsumed={() => setImportPrefill(null)}
             />
           )}
         </div>

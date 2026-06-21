@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { sb } from '../supabase'
 import { todayStr } from '../utils/helpers'
 import LineItemsEditor from '../components/LineItemsEditor'
 
-export default function AddInvoicePanel({ cfg, onSaved, invoices }) {
+export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPrefillConsumed }) {
   const [form, setForm] = useState({
     invnum: '', billingdate: todayStr(), status: '', name: '', address: '', attn: ''
   })
@@ -12,6 +12,22 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices }) {
   const [success, setSuccess] = useState('')
   const [saving, setSaving] = useState(false)
   const [clientSuggestions, setClientSuggestions] = useState([])
+  const [fromImport, setFromImport] = useState(false)
+
+  // Apply data sent from the Excel Import Helper, then mark it consumed so it doesn't re-fire
+  useEffect(() => {
+    if (!prefill) return
+    setRows(prefill.rows.map(r => ({
+      id: r.id || `row-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      date: r.date || '', desc: r.desc || '', qty: r.qty || '1', rate: r.rate || '0',
+    })))
+    if (prefill.clientHint?.name) {
+      setForm(p => ({ ...p, name: prefill.clientHint.name, address: prefill.clientHint.address || p.address }))
+    }
+    setFromImport(true)
+    onPrefillConsumed?.()
+    // try to auto-fetch a matching client's address/number context if one already exists
+  }, [prefill])
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -57,6 +73,7 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices }) {
     setForm({ invnum: '', billingdate: todayStr(), status: '', name: '', address: '', attn: '' })
     setRows([])
     setError(''); setSuccess('')
+    setFromImport(false)
   }
 
   const submit = async () => {
@@ -122,6 +139,12 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices }) {
     <div className="page">
       {success && <div className="alert-success">✅ {success}</div>}
       {error   && <div className="alert-error">❌ {error}</div>}
+      {fromImport && (
+        <div className="pr-info-note" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span>📊 Line items loaded from Excel import — review and edit before saving.</span>
+          <button type="button" onClick={() => setFromImport(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#718096', fontSize: 13, flexShrink: 0 }}>✕ Dismiss</button>
+        </div>
+      )}
 
       <div className="pr-card">
         <div className="pr-card-title">Invoice Details</div>
