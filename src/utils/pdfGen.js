@@ -411,7 +411,6 @@ export async function makeQuotationPDF(qdata) {
     ['Phone',   '+65 91858511'],
     ['Email',   'venkat@charanlogistics.com'],
     ['Web',     'www.charanlogistics.com'],
-    ['GST',     'Not GST Registered'],
   ]
 
   // BILL TO body — only show rows with values
@@ -496,7 +495,6 @@ export async function makeQuotationPDF(qdata) {
     it.rateType || '/Trip',
     '1',
     cur + ' ' + fmt(it.price || 0),
-    'Nil',
     cur + ' ' + fmt(it.price || 0),
   ])
 
@@ -509,7 +507,6 @@ export async function makeQuotationPDF(qdata) {
       { content: 'RATE TYPE',             styles: { halign: 'center' } },
       { content: 'QTY',                   styles: { halign: 'center' } },
       { content: 'UNIT PRICE (S$)',        styles: { halign: 'right'  } },
-      { content: 'TAX / GST',             styles: { halign: 'center' } },
       { content: 'TOTAL (S$)',             styles: { halign: 'right'  } },
     ]],
     body: tRows,
@@ -522,14 +519,13 @@ export async function makeQuotationPDF(qdata) {
     },
     bodyStyles:  { fontSize: 8.5, textColor: [25, 45, 80], cellPadding: 3 },
     alternateRowStyles: { fillColor: [245, 249, 255] },
-    columnStyles: {
-      0: { cellWidth: 'auto', halign: 'left',   fontStyle: 'bold' },
-      1: { cellWidth: 22,     halign: 'center' },
-      2: { cellWidth: 12,     halign: 'center' },
-      3: { cellWidth: 28,     halign: 'right'  },
-      4: { cellWidth: 18,     halign: 'center' },
-      5: { cellWidth: 28,     halign: 'right',  fontStyle: 'bold' },
-    },
+columnStyles: {
+  0: { cellWidth: 'auto', halign: 'left',   fontStyle: 'bold' },
+  1: { cellWidth: 22,     halign: 'center' },
+  2: { cellWidth: 12,     halign: 'center' },
+  3: { cellWidth: 28,     halign: 'right'  },
+  4: { cellWidth: 28,     halign: 'right',  fontStyle: 'bold' },
+},
     styles: { lineColor: [220, 232, 248], lineWidth: 0.25 },
     didDrawPage: () => { drawQtHdrFtr() },
   })
@@ -542,7 +538,6 @@ export async function makeQuotationPDF(qdata) {
 
   const totRows = [
     ['Subtotal',                  cur + ' ' + fmt(subtotal), false],
-    ['GST (0% – Not Registered)', '–',                        false],
     ['GRAND TOTAL',               cur + ' ' + fmt(subtotal), true ],
   ]
 
