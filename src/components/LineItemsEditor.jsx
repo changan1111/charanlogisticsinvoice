@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { fmt } from '../utils/helpers'
 
-const emptyRow = () => ({ id: Date.now() + Math.random(), date: '', desc: '', qty: '', rate: '' })
+const emptyRow = () => ({ id: Date.now() + Math.random(), date: '', desc: '', qty: '1', rate: '' })
 
 export default function LineItemsEditor({ value, onChange }) {
   const [rows, setRows] = useState(value && value.length ? value : [emptyRow(), emptyRow(), emptyRow()])
@@ -20,13 +20,23 @@ export default function LineItemsEditor({ value, onChange }) {
   }, [rows])
 
   const update = (id, field, val) => {
+    if (field === 'qty') {
+      const qty = Math.max(1, parseInt(val, 10) || 1)
+      setRows(rs => rs.map(r => r.id === id ? { ...r, qty: String(qty) } : r))
+      return
+    }
+    if (field === 'rate') {
+      const rate = val === '' ? '' : String(parseFloat(val) || 0)
+      setRows(rs => rs.map(r => r.id === id ? { ...r, rate } : r))
+      return
+    }
     setRows(rs => rs.map(r => r.id === id ? { ...r, [field]: val } : r))
   }
 
   const addRow = () => setRows(rs => [...rs, emptyRow()])
   const delRow = (id) => setRows(rs => rs.filter(r => r.id !== id))
 
-  const total = rows.reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.rate) || 0), 0)
+  const total = rows.reduce((s, r) => s + (parseFloat(r.qty) || 1) * (parseFloat(r.rate) || 0), 0)
 
   return (
     <>
@@ -51,7 +61,7 @@ export default function LineItemsEditor({ value, onChange }) {
                   <td style={{ textAlign: 'center', color: '#7a6e58', fontWeight: 600, fontSize: '.82rem' }}>{i + 1}</td>
                   <td><input type="date" value={r.date} onChange={e => update(r.id, 'date', e.target.value)} style={{ minWidth: 130 }} /></td>
                   <td><input type="text" placeholder="Description" value={r.desc} onChange={e => update(r.id, 'desc', e.target.value)} /></td>
-                  <td><input type="number" placeholder="1" value={r.qty} min="0.01" step="0.01" onChange={e => update(r.id, 'qty', e.target.value)} style={{ textAlign: 'center' }} /></td>
+                  <td><input type="number" placeholder="1" value={r.qty} min="1" step="1" onChange={e => update(r.id, 'qty', e.target.value)} style={{ textAlign: 'center' }} /></td>
                   <td><input type="number" placeholder="0.00" value={r.rate} min="0" step="0.01" onChange={e => update(r.id, 'rate', e.target.value)} style={{ textAlign: 'right' }} /></td>
                   <td style={{ textAlign: 'right', fontWeight: 600, fontSize: '.85rem', color: 'var(--ink)' }}>S$ {fmt(amt)}</td>
                   <td><button className="qt-del-btn" onClick={() => delRow(r.id)} title="Remove row">✕</button></td>
@@ -68,7 +78,9 @@ export default function LineItemsEditor({ value, onChange }) {
           <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: "'Outfit',serif", color: 'var(--gold)' }}>S$ {fmt(total)}</div>
         </div>
       </div>
-      <div style={{ marginTop: 8, fontSize: '.75rem', color: 'var(--muted)' }}>💡 Total is auto-calculated from line items. At least one line item with Description, Qty and Rate is required.</div>
+      <div style={{ marginTop: 8, fontSize: '.75rem', color: 'var(--muted)' }}>
+        💡 Total is auto-calculated. Description is required. Qty is always at least 1 and you can increase it if needed.
+      </div>
     </>
   )
 }

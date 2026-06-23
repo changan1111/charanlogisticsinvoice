@@ -296,13 +296,39 @@ export async function makePayrollPDF(r) {
   return doc.output('blob')
 }
 
+// ─── DROP-IN REPLACEMENT for makeQuotationPDF in your existing pdfGen.js ───
+// Replace ONLY the makeQuotationPDF export at the bottom of pdfGen.js with this.
+// All imports, loadImages, drawHeaderFooterSync, makeInvoicePDF, makePayrollPDF stay unchanged.
+
+// ─── DROP-IN REPLACEMENT for makeQuotationPDF in your existing pdfGen.js ───
+// Replace ONLY the makeQuotationPDF export at the bottom of pdfGen.js with this.
+// All imports, loadImages, drawHeaderFooterSync, makeInvoicePDF, makePayrollPDF stay unchanged.
+
+// ─── DROP-IN REPLACEMENT for makeQuotationPDF in your existing pdfGen.js ───
+// Replace ONLY the makeQuotationPDF export at the bottom of pdfGen.js with this.
+// All imports, loadImages, drawHeaderFooterSync, makeInvoicePDF, makePayrollPDF stay unchanged.
+
+// ─── DROP-IN REPLACEMENT for makeQuotationPDF in your existing pdfGen.js ───
+// Replace ONLY the makeQuotationPDF export at the bottom of pdfGen.js with this.
+// All imports, loadImages, drawHeaderFooterSync, makeInvoicePDF, makePayrollPDF stay unchanged.
+
+// ─── DROP-IN REPLACEMENT for makeQuotationPDF in your existing pdfGen.js ───
+// Replace ONLY the makeQuotationPDF export at the bottom of pdfGen.js with this.
+// All imports, loadImages, drawHeaderFooterSync, makeInvoicePDF, makePayrollPDF stay unchanged.
+
 export async function makeQuotationPDF(qdata) {
-  const { qNum, qDate, qClient, qAddr, qNotes, items, gstOn } = qdata
+  const {
+    qNum, qDate,
+    qClient, qTitle = '', qCompany = '', qAddr, qPhone = '', qEmail = '',
+    qNotes, items,
+  } = qdata
+
   const cur = 'S$'
   const doc = new jsPDF({ format: 'a4', unit: 'mm' })
   const W = 210, M = 8, HEADER_H = 35, FOOTER_H = 22
+  const CONTENT_TOP = HEADER_H + 4
 
-  // Preload images for sync use in didDrawPage
+  // ── Reuse your existing image loader ──────────────────────────────────────
   const imgs = await loadImages()
   const { hdr, ftr } = imgs
 
@@ -323,60 +349,306 @@ export async function makeQuotationPDF(qdata) {
 
   drawQtHdrFtr()
 
-  let y = 42
+  // ── QUOTATION title bar ───────────────────────────────────────────────────
+  let y = CONTENT_TOP + 2
   doc.setFillColor(11, 29, 58); doc.rect(M, y, W - M * 2, 10, 'F')
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(201, 168, 76)
   doc.text('QUOTATION', 105, y + 7, { align: 'center' })
-  y += 16
+  y += 14
 
-  doc.setFontSize(9); doc.setTextColor(11, 29, 58)
-  doc.setFont('helvetica', 'bold'); doc.text('Quotation No.:', M, y)
-  doc.setFont('helvetica', 'normal'); doc.text(qNum || '—', M + 36, y)
-  doc.setFont('helvetica', 'bold'); doc.text('Date:', W - M - 60, y)
-  doc.setFont('helvetica', 'normal'); doc.text(qDate || '—', W - M - 40, y)
-  y += 7
-  doc.setFont('helvetica', 'bold'); doc.text('To:', M, y)
-  doc.setFont('helvetica', 'normal'); doc.text(qClient || '—', M + 10, y)
+  // ── Meta row: Quotation No / Date / Valid Until ───────────────────────────
+  const validUntil = (() => {
+    const d = new Date(qDate); d.setDate(d.getDate() + 30)
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  })()
+  const fmtDate = (ds) => new Date(ds).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  doc.setFontSize(8.5); doc.setTextColor(11, 29, 58)
+  const metaLeft = [
+    ['Quotation No.', qNum || '—'],
+    ['Date',          fmtDate(qDate)],
+    ['Valid Until',   validUntil],
+  ]
+  const metaRight = [
+    ['Currency',    'S$ (Singapore Dollar)'],
+    ['Prepared By', 'Venkat Kumar | +65 91858511'],
+  ]
+
+  metaLeft.forEach(([lbl, val], i) => {
+    const ry = y + i * 5.5
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(70, 95, 130); doc.text(lbl + ' :', M, ry)
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(11, 29, 58); doc.text(val, M + 34, ry)
+  })
+  metaRight.forEach(([lbl, val], i) => {
+    const ry = y + i * 5.5
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(70, 95, 130); doc.text(lbl + ' :', 115, ry)
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(11, 29, 58); doc.text(val, 115 + 26, ry)
+  })
+
+  y += metaLeft.length * 5.5 + 5
+  doc.setDrawColor(210, 225, 245); doc.setLineWidth(0.4); doc.line(M, y, W - M, y)
   y += 5
-  const addrLines = (qAddr || '').split(/\n|,/).map(s => s.trim()).filter(Boolean)
-  addrLines.forEach(l => { doc.text(l, M + 10, y); y += 5 })
-  y += 3
 
-  const tRows = items.map((it, i) => [
-    String(i + 1), it.desc || '', String(it.qty || 1),
+  // ── PARTIES: FROM (left) | BILL TO (right) ───────────────────────────────
+  const colW  = (W - M * 2 - 6) / 2
+  const colRX = M + colW + 6
+
+  // FROM header
+  doc.setFillColor(11, 29, 58); doc.rect(M, y, colW, 7, 'F')
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255)
+  doc.text('FROM – SERVICE PROVIDER', M + 3, y + 4.8)
+
+  // BILL TO header
+  doc.setFillColor(23, 162, 184); doc.rect(colRX, y, colW, 7, 'F')
+  doc.text('BILL TO – CLIENT', colRX + 3, y + 4.8)
+  y += 7
+
+  // FROM body
+  const fromRows = [
+    ['',        'Charan Logistics Pte Ltd', true],  // company name bold
+    ['Reg No.', '202502540D'],
+    ['Address', '101 Kitchener Road\n#03-14 Jalan Besar Plaza\nSingapore 208511'],
+    ['Phone',   '+65 91858511'],
+    ['Email',   'venkat@charanlogistics.com'],
+    ['Web',     'www.charanlogistics.com'],
+    ['GST',     'Not GST Registered'],
+  ]
+
+  // BILL TO body — only show rows with values
+  const toRows = [
+    ['',         qClient || '—', true],
+    ...(qTitle   ? [['Title',   qTitle]]   : []),
+    ...(qCompany ? [['Company', qCompany]] : []),
+    ['Address',  qAddr || '—'],
+    ...(qPhone   ? [['Phone',   qPhone]]   : []),
+    ...(qEmail   ? [['Email',   qEmail]]   : []),
+  ]
+
+  // Split address into multiple rows so each line aligns correctly
+  const expandRows = (rows) => {
+    const out = []
+    rows.forEach(([lbl, val, bold]) => {
+      if (lbl === 'Address') {
+        const addrLines = (val || '').split(/\n|,/).map(s => s.trim()).filter(Boolean)
+        addrLines.forEach((line, i) => out.push([i === 0 ? 'Address' : '', line, false]))
+      } else {
+        out.push([lbl, val, bold])
+      }
+    })
+    return out
+  }
+
+  const fromRowsExp = expandRows(fromRows)
+  const toRowsExp   = expandRows(toRows)
+
+  const ROW_H  = 6.5   // taller rows for readability
+  const maxRows = Math.max(fromRowsExp.length, toRowsExp.length)
+  const bodyH   = maxRows * ROW_H + 6
+
+  doc.setFillColor(245, 249, 255); doc.rect(M,     y, colW, bodyH, 'F')
+  doc.setFillColor(245, 249, 255); doc.rect(colRX, y, colW, bodyH, 'F')
+
+  const LBL_X  = 3   // padding from box edge
+  const VAL_X  = 22  // fixed value column offset — keeps all values aligned
+
+  const drawPartyRows = (rows, startX) => {
+    rows.forEach(([lbl, val, bold], i) => {
+      const ry = y + 5 + i * ROW_H
+      if (lbl) {
+        // Label
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(100, 120, 160)
+        doc.text(lbl, startX + LBL_X, ry)
+        // Value — always at fixed VAL_X regardless of label length
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(11, 29, 58)
+        doc.text(val, startX + VAL_X, ry)
+      } else if (bold) {
+        // Client / company name — full width bold, no indent
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9.5); doc.setTextColor(11, 29, 58)
+        doc.text(val, startX + LBL_X, ry)
+      } else {
+        // Address continuation — indent to VAL_X to align with first address line
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.5); doc.setTextColor(11, 29, 58)
+        doc.text(val, startX + VAL_X, ry)
+      }
+    })
+  }
+
+  drawPartyRows(fromRowsExp, M)
+  drawPartyRows(toRowsExp,   colRX)
+
+  doc.setDrawColor(210, 225, 245); doc.setLineWidth(0.2)
+  doc.rect(M,     y, colW, bodyH, 'S')
+  doc.rect(colRX, y, colW, bodyH, 'S')
+
+  y += bodyH + 6
+
+  // ── SCOPE OF SERVICES TABLE ───────────────────────────────────────────────
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(23, 162, 184)
+  doc.text('SCOPE OF SERVICES & PRICING', M, y)
+  doc.setDrawColor(210, 225, 245); doc.line(M, y + 1.5, W - M, y + 1.5)
+  y += 5
+
+  const validItems = (items || []).filter(it => it.desc?.trim())
+  const tRows = validItems.map(it => [
+    it.desc || '',
+    it.rateType || '/Trip',
+    '1',
     cur + ' ' + fmt(it.price || 0),
-    cur + ' ' + fmt((it.qty || 1) * (it.price || 0)),
+    'Nil',
+    cur + ' ' + fmt(it.price || 0),
   ])
-  const subtotal = items.reduce((s, it) => s + (it.qty || 1) * (it.price || 0), 0)
-  const gst = gstOn ? subtotal * 0.09 : 0
-  const grand = subtotal + gst
 
   autoTable(doc, {
-    startY: y, margin: { left: M, right: M, top: HEADER_H + 4, bottom: FOOTER_H + 6 },
-    head: [['No.', 'Description', 'Qty', 'Unit Price', 'Total']],
+    startY: y,
+    margin: { left: M, right: M, top: CONTENT_TOP, bottom: FOOTER_H + 8 },
+    rowPageBreak: 'avoid',
+    head: [[
+      { content: 'DESCRIPTION & SCOPE',  styles: { halign: 'left'   } },
+      { content: 'RATE TYPE',             styles: { halign: 'center' } },
+      { content: 'QTY',                   styles: { halign: 'center' } },
+      { content: 'UNIT PRICE (S$)',        styles: { halign: 'right'  } },
+      { content: 'TAX / GST',             styles: { halign: 'center' } },
+      { content: 'TOTAL (S$)',             styles: { halign: 'right'  } },
+    ]],
     body: tRows,
-    styles: { fontSize: 9, cellPadding: 3 },
-    headStyles: { fillColor: [11, 29, 58], textColor: [201, 168, 76], fontStyle: 'bold' },
-    columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 16, halign: 'center' }, 3: { cellWidth: 38, halign: 'right' }, 4: { cellWidth: 38, halign: 'right', fontStyle: 'bold' } },
+    headStyles: {
+      fillColor:  [11, 29, 58],
+      textColor:  [175, 205, 240],
+      fontSize:   8,
+      fontStyle:  'bold',
+      cellPadding: 3,
+    },
+    bodyStyles:  { fontSize: 8.5, textColor: [25, 45, 80], cellPadding: 3 },
+    alternateRowStyles: { fillColor: [245, 249, 255] },
+    columnStyles: {
+      0: { cellWidth: 'auto', halign: 'left',   fontStyle: 'bold' },
+      1: { cellWidth: 22,     halign: 'center' },
+      2: { cellWidth: 12,     halign: 'center' },
+      3: { cellWidth: 28,     halign: 'right'  },
+      4: { cellWidth: 18,     halign: 'center' },
+      5: { cellWidth: 28,     halign: 'right',  fontStyle: 'bold' },
+    },
+    styles: { lineColor: [220, 232, 248], lineWidth: 0.25 },
     didDrawPage: () => { drawQtHdrFtr() },
   })
 
-  const totY = doc.lastAutoTable.finalY + 4
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(107, 130, 168)
-  doc.text('Subtotal:', W - M - 50, totY + 5); doc.text(cur + ' ' + fmt(subtotal), W - M, totY + 5, { align: 'right' })
-  if (gstOn) { doc.text('GST 9%:', W - M - 50, totY + 11); doc.text(cur + ' ' + fmt(gst), W - M, totY + 11, { align: 'right' }) }
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(11, 29, 58)
-  const gt = gstOn ? totY + 17 : totY + 11
-  doc.text('Grand Total:', W - M - 50, gt); doc.text(cur + ' ' + fmt(grand), W - M, gt, { align: 'right' })
+  y = doc.lastAutoTable.finalY + 4
 
-  if (qNotes) {
-    const nt = gt + 10
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(11, 29, 58)
-    doc.text('Notes / Terms:', M, nt)
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80)
+  // ── TOTALS ────────────────────────────────────────────────────────────────
+  const subtotal = validItems.reduce((s, it) => s + (it.price || 0), 0)
+  const totW = 80, totX = W - M - totW
+
+  const totRows = [
+    ['Subtotal',                  cur + ' ' + fmt(subtotal), false],
+    ['GST (0% – Not Registered)', '–',                        false],
+    ['GRAND TOTAL',               cur + ' ' + fmt(subtotal), true ],
+  ]
+
+  let ty = y
+  totRows.forEach(([lbl, val, bold], i) => {
+    if (bold) {
+      doc.setFillColor(11, 29, 58); doc.rect(totX, ty, totW, 7, 'F')
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255)
+    } else {
+      doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(8.5); doc.setTextColor(11, 29, 58)
+    }
+    doc.text(lbl, totX + 4, ty + 5)
+    doc.text(val, totX + totW - 4, ty + 5, { align: 'right' })
+    if (i < totRows.length - 1) {
+      doc.setDrawColor(210, 225, 245); doc.setLineWidth(0.2); doc.line(totX, ty + 7, totX + totW, ty + 7)
+    }
+    ty += 7
+  })
+
+  y = ty + 6
+
+  // ── NOTES ─────────────────────────────────────────────────────────────────
+  if (qNotes?.trim()) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(23, 162, 184)
+    doc.text('NOTES / WORKING HOURS', M, y)
+    doc.setDrawColor(210, 225, 245); doc.line(M, y + 1.5, W - M, y + 1.5)
+    y += 5
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(60, 60, 60)
     const nlines = doc.splitTextToSize(qNotes, W - M * 2)
-    doc.text(nlines, M, nt + 5)
+    doc.text(nlines, M, y)
+    y += nlines.length * 4.5 + 5
   }
+
+  // ── TERMS & CONDITIONS ────────────────────────────────────────────────────
+  const TERMS = [
+    'This quotation is valid for 30 days from the date of issue.',
+    'Payment Terms: 50% advance upon acceptance of quotation; remaining 50% upon commencement of service.',
+    'Working Hours: Monday to Saturday, 8 AM – 6 PM. Overtime or Sunday deployment subject to additional charges.',
+    'All prices are in Singapore Dollars (S$). Charan Logistics Pte Ltd is not GST registered.',
+    'Fuel surcharge, ERP, and parking costs are included unless otherwise stated.',
+    'Additional stops beyond the agreed scope will be charged at prevailing rates.',
+    'Charan Logistics Pte Ltd reserves the right to substitute vehicles of equivalent capacity if required.',
+    'Cancellation policy: 48 hours\' notice required; cancellations within 24 hours may attract a cancellation fee.',
+    'This quotation supersedes all previous verbal or written communications on the same subject.',
+  ]
+
+  const SAFE_BOTTOM = 297 - FOOTER_H - 10
+
+  const ensureSpace = (needed) => {
+    if (y + needed > SAFE_BOTTOM) {
+      doc.addPage(); drawQtHdrFtr(); y = CONTENT_TOP + 4
+    }
+  }
+
+  ensureSpace(10)
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(23, 162, 184)
+  doc.text('TERMS & CONDITIONS', M, y)
+  doc.setDrawColor(210, 225, 245); doc.line(M, y + 1.5, W - M, y + 1.5)
+  y += 5
+
+  TERMS.forEach((term, i) => {
+    const wrapped = doc.splitTextToSize(term, W - M * 2 - 10)
+    const rowH    = wrapped.length * 4 + 3
+    ensureSpace(rowH)
+    if (i % 2 === 0) {
+      doc.setFillColor(245, 249, 255); doc.rect(M, y - 2, W - M * 2, rowH, 'F')
+    }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(23, 162, 184)
+    doc.text(String(i + 1), M + 2, y + 2)
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(40, 40, 40)
+    doc.text(wrapped, M + 8, y + 2)
+    y += rowH + 1
+  })
+
+  y += 4
+
+  // ── ACCEPTANCE ────────────────────────────────────────────────────────────
+  ensureSpace(40)
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(23, 162, 184)
+  doc.text('ACCEPTANCE', M, y)
+  doc.setDrawColor(210, 225, 245); doc.line(M, y + 1.5, W - M, y + 1.5)
+  y += 5
+
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); doc.setTextColor(100, 100, 100)
+  const acceptTxt = 'By signing below, the client confirms acceptance of this quotation, agrees to the terms and conditions stated herein, and authorises Charan Logistics Pte Ltd to proceed with the agreed services.'
+  doc.text(doc.splitTextToSize(acceptTxt, W - M * 2), M, y)
+  y += 10
+
+  const sigW = (W - M * 2 - 8) / 2
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(11, 29, 58)
+  doc.text('For Charan Logistics Pte Ltd', M, y)
+  doc.text('Client Authorisation', M + sigW + 8, y)
+  y += 12
+
+  doc.setDrawColor(60, 60, 60); doc.setLineWidth(0.3)
+  doc.line(M, y, M + sigW, y)
+  doc.line(M + sigW + 8, y, M + sigW * 2 + 8, y)
+  y += 4
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(120, 120, 120)
+  doc.text('Authorised Signatory | Date: ___________', M, y)
+  doc.text('Name: _______________ | Date: ___________', M + sigW + 8, y)
+  y += 5
+  doc.text('Stamp (if applicable):', M, y)
+  doc.text('Designation: ___________________________', M + sigW + 8, y)
 
   return doc.output('blob')
 }
+
