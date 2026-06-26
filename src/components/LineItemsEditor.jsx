@@ -19,7 +19,13 @@ export default function LineItemsEditor({ value, onChange }) {
     onChange(rows)
   }, [rows])
 
-  const update = (id, field, val) => {
+  const autoResize = (el) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
+  const update = (id, field, val, el) => {
     if (field === 'qty') {
       const qty = Math.max(1, parseInt(val, 10) || 1)
       setRows(rs => rs.map(r => r.id === id ? { ...r, qty: String(qty) } : r))
@@ -30,7 +36,27 @@ export default function LineItemsEditor({ value, onChange }) {
       setRows(rs => rs.map(r => r.id === id ? { ...r, rate } : r))
       return
     }
+    if (field === 'desc' && el) autoResize(el)
     setRows(rs => rs.map(r => r.id === id ? { ...r, [field]: val } : r))
+  }
+
+  // Insert \n at cursor position (not at end of string)
+  const handleDescKeyDown = (e, id) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      const el = e.target
+      const start = el.selectionStart
+      const end = el.selectionEnd
+      const current = el.value
+      const next = current.slice(0, start) + '\n' + current.slice(end)
+      // Update state
+      setRows(rs => rs.map(r => r.id === id ? { ...r, desc: next } : r))
+      // Restore cursor after React re-renders
+      requestAnimationFrame(() => {
+        el.selectionStart = el.selectionEnd = start + 1
+        autoResize(el)
+      })
+    }
   }
 
   const addRow = () => setRows(rs => [...rs, emptyRow()])
@@ -60,7 +86,34 @@ export default function LineItemsEditor({ value, onChange }) {
                 <tr key={r.id}>
                   <td style={{ textAlign: 'center', color: '#7a6e58', fontWeight: 600, fontSize: '.82rem' }}>{i + 1}</td>
                   <td><input type="date" value={r.date} onChange={e => update(r.id, 'date', e.target.value)} style={{ minWidth: 130 }} /></td>
-                  <td><input type="text" placeholder="Description" value={r.desc} onChange={e => update(r.id, 'desc', e.target.value)} /></td>
+                  <td style={{ verticalAlign: 'top', padding: '4px' }}>
+                    <textarea
+                      placeholder="Description (Enter = new line)"
+                      value={r.desc}
+                      rows={1}
+                      onChange={e => update(r.id, 'desc', e.target.value, e.target)}
+                      onKeyDown={e => handleDescKeyDown(e, r.id)}
+                      style={{
+                        resize: 'none',
+                        overflow: 'hidden',
+                        minHeight: 34,
+                        lineHeight: '1.5',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: '5px 8px',
+                        fontFamily: 'inherit',
+                        fontSize: 'inherit',
+                        border: '1px solid #cbd5e0',
+                        borderRadius: 4,
+                        background: 'white',
+                        outline: 'none',
+                        color: 'var(--ink)',
+                      }}
+                      onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                      ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' } }}
+                    />
+                  </td>
                   <td><input type="number" placeholder="1" value={r.qty} min="1" step="1" onChange={e => update(r.id, 'qty', e.target.value)} style={{ textAlign: 'center' }} /></td>
                   <td><input type="number" placeholder="0.00" value={r.rate} min="0" step="0.01" onChange={e => update(r.id, 'rate', e.target.value)} style={{ textAlign: 'right' }} /></td>
                   <td style={{ textAlign: 'right', fontWeight: 600, fontSize: '.85rem', color: 'var(--ink)' }}>S$ {fmt(amt)}</td>

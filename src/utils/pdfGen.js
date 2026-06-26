@@ -138,8 +138,8 @@ export async function makeInvoicePDF(inv, cfg) {
   const bx = W - M - 75, bw = 75, bh = 36  // total box dimensions
 
   const colStyles = hasLineItemDates
-    ? { 0: { cellWidth: 30, halign: 'left', overflow: 'hidden' }, 1: { cellWidth: 'auto' }, 2: { halign: 'center', cellWidth: 18, overflow: 'hidden' }, 3: { halign: 'right', cellWidth: 30, overflow: 'hidden' }, 4: { halign: 'right', cellWidth: 30, fontStyle: 'bold', overflow: 'hidden' } }
-    : { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 18, overflow: 'hidden' }, 2: { halign: 'right', cellWidth: 30, overflow: 'hidden' }, 3: { halign: 'right', cellWidth: 30, fontStyle: 'bold', overflow: 'hidden' } }
+    ? { 0: { cellWidth: 30, halign: 'left', overflow: 'hidden' }, 1: { cellWidth: 'auto', overflow: 'linebreak' }, 2: { halign: 'center', cellWidth: 18, overflow: 'hidden' }, 3: { halign: 'right', cellWidth: 30, overflow: 'hidden' }, 4: { halign: 'right', cellWidth: 30, fontStyle: 'bold', overflow: 'hidden' } }
+    : { 0: { cellWidth: 'auto', overflow: 'linebreak' }, 1: { halign: 'center', cellWidth: 18, overflow: 'hidden' }, 2: { halign: 'right', cellWidth: 30, overflow: 'hidden' }, 3: { halign: 'right', cellWidth: 30, fontStyle: 'bold', overflow: 'hidden' } }
 
   autoTable(doc, {
     startY: tableY, head: tableHead, body: allRows,
