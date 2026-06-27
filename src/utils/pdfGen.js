@@ -138,15 +138,15 @@ export async function makeInvoicePDF(inv, cfg) {
   const bx = W - M - 75, bw = 75, bh = 36  // total box dimensions
 
   const colStyles = hasLineItemDates
-    ? { 0: { cellWidth: 30, halign: 'left', overflow: 'hidden' }, 1: { cellWidth: 'auto', overflow: 'linebreak' }, 2: { halign: 'center', cellWidth: 18, overflow: 'hidden' }, 3: { halign: 'right', cellWidth: 30, overflow: 'hidden' }, 4: { halign: 'right', cellWidth: 30, fontStyle: 'bold', overflow: 'hidden' } }
-    : { 0: { cellWidth: 'auto', overflow: 'linebreak' }, 1: { halign: 'center', cellWidth: 18, overflow: 'hidden' }, 2: { halign: 'right', cellWidth: 30, overflow: 'hidden' }, 3: { halign: 'right', cellWidth: 30, fontStyle: 'bold', overflow: 'hidden' } }
+    ? { 0: { cellWidth: 28, halign: 'left' }, 1: { cellWidth: 'auto' }, 2: { halign: 'center', cellWidth: 18 }, 3: { halign: 'right', cellWidth: 36 }, 4: { halign: 'right', cellWidth: 36, fontStyle: 'bold' } }
+    : { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'right', cellWidth: 36 }, 3: { halign: 'right', cellWidth: 36, fontStyle: 'bold' } }
 
   autoTable(doc, {
     startY: tableY, head: tableHead, body: allRows,
-    margin: { left: M, right: M, top: CONTENT_TOP, bottom: FOOTER_H + 4 },
+    margin: { left: M, right: M, top: CONTENT_TOP, bottom: FOOTER_H + 6 },
     rowPageBreak: 'avoid',
-    headStyles: { fillColor: [11, 29, 58], textColor: [175, 205, 240], fontSize: 9, fontStyle: 'bold', cellPadding: 4, overflow: 'hidden', minCellHeight: 12 },
-    bodyStyles: { fontSize: 9, textColor: [25, 45, 80], cellPadding: 4 },
+    headStyles: { fillColor: [11, 29, 58], textColor: [175, 205, 240], fontSize: 10, fontStyle: 'bold', cellPadding: 4.5 },
+    bodyStyles: { fontSize: 10, textColor: [25, 45, 80], cellPadding: 4.5 },
     alternateRowStyles: { fillColor: [245, 249, 255] },
     columnStyles: colStyles,
     styles: { lineColor: [220, 232, 248], lineWidth: 0.3 },
