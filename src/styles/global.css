@@ -69,7 +69,91 @@ body {
 .nav-name { font-size: 1.3rem; font-weight: 600; color: white; }
 .nav-name span { color: var(--sky); }
 .nav-right { display: flex; align-items: center; gap: .6rem; }
+/* Show/hide desktop vs mobile nav items */
+.nav-desktop-only { display: inline-flex; }
+.nav-mobile-only  { display: none; }
 
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-left: auto; /* ← pushes entire right group to the far end */
+}
+
+.nav-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: white;
+  flex: 1; /* ← this must be present */
+}
+
+.nav-bell-wrap {
+  position: relative;
+  display: inline-flex;  /* ← add this */
+  align-items: center;   /* ← add this */
+}
+
+.nav-bell-count {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #e87e04;
+  color: white;
+  font-size: .62rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 2px solid var(--ink);
+}
+.nav-bell:hover, .nav-bell.active {
+  background: rgba(59,130,196,.25);
+  border-color: rgba(59,130,196,.45);
+}
+
+@media (max-width: 600px) {
+  .nav-desktop-only { display: none !important; }
+  .nav-mobile-only  { display: block; }
+
+  /* On mobile, bell dropdown becomes full-width, anchored below the entire nav,
+     not below the icon — prevents right-edge clipping */
+  .nav-bell-wrap { position: static; }
+  .nav-reminder-dropdown {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 0 0 14px 14px;
+    max-height: 70vh;
+  }
+}
+
+/* Overflow menu on mobile */
+.nav-more-wrap { position: relative; }
+.nav-more-menu {
+  position: absolute; top: calc(100% + .5rem); right: 0;
+  background: white; border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(11,29,58,.14); z-index: 500;
+  min-width: 140px;
+}
+.nav-more-menu button {
+  display: block; width: 100%; text-align: left;
+  padding: .65rem 1rem; font-size: .85rem;
+  background: none; border: none; cursor: pointer;
+  font-family: 'Outfit', sans-serif; color: var(--ink);
+  transition: background .14s;
+}
+.nav-more-menu button:hover { background: var(--ice); }
+
+/* Bell badge — add border so it separates from dark nav bg */
+.nav-bell-count { border: 1.5px solid var(--ink); }
 /* ── App body ── */
 .app-body { display: flex; flex: 1; min-height: 0; }
 
