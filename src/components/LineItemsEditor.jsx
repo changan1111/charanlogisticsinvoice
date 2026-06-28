@@ -6,7 +6,6 @@ const emptyRow = () => ({ id: Date.now() + Math.random(), date: '', desc: '', qt
 export default function LineItemsEditor({ value, onChange }) {
   const [rows, setRows] = useState(value && value.length ? value : [emptyRow(), emptyRow(), emptyRow()])
 
-  // Sync when parent provides loaded data (only when IDs differ — not on every onChange)
   useEffect(() => {
     if (value && value.length > 0) {
       const currentIds = rows.map(r => r.id).join(',')
@@ -40,7 +39,6 @@ export default function LineItemsEditor({ value, onChange }) {
     setRows(rs => rs.map(r => r.id === id ? { ...r, [field]: val } : r))
   }
 
-  // Insert \n at cursor position (not at end of string)
   const handleDescKeyDown = (e, id) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -49,9 +47,7 @@ export default function LineItemsEditor({ value, onChange }) {
       const end = el.selectionEnd
       const current = el.value
       const next = current.slice(0, start) + '\n' + current.slice(end)
-      // Update state
       setRows(rs => rs.map(r => r.id === id ? { ...r, desc: next } : r))
-      // Restore cursor after React re-renders
       requestAnimationFrame(() => {
         el.selectionStart = el.selectionEnd = start + 1
         autoResize(el)
@@ -62,7 +58,7 @@ export default function LineItemsEditor({ value, onChange }) {
   const addRow = () => setRows(rs => [...rs, emptyRow()])
   const delRow = (id) => setRows(rs => rs.filter(r => r.id !== id))
 
-  const total = rows.reduce((s, r) => s + (parseFloat(r.qty) || 1) * (parseFloat(r.rate) || 0), 0)
+  const total = rows.reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.rate) || 0), 0)
 
   return (
     <>
@@ -115,8 +111,8 @@ export default function LineItemsEditor({ value, onChange }) {
                     />
                   </td>
                   <td><input type="number" placeholder="1" value={r.qty} min="1" step="1" onChange={e => update(r.id, 'qty', e.target.value)} style={{ textAlign: 'center' }} /></td>
-                  <td><input type="number" placeholder="0.00" value={r.rate} min="0" step="0.01" onChange={e => update(r.id, 'rate', e.target.value)} style={{ textAlign: 'right' }} /></td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, fontSize: '.85rem', color: 'var(--ink)' }}>S$ {fmt(amt)}</td>
+                  <td><input type="number" placeholder="0.00" value={r.rate} step="0.01" onChange={e => update(r.id, 'rate', e.target.value)} style={{ textAlign: 'right' }} /></td>
+                  <td style={{ textAlign: 'right', fontWeight: 600, fontSize: '.85rem', color: amt < 0 ? '#c0282e' : 'var(--ink)' }}>S$ {fmt(amt)}</td>
                   <td><button className="qt-del-btn" onClick={() => delRow(r.id)} title="Remove row">✕</button></td>
                 </tr>
               )
@@ -128,11 +124,11 @@ export default function LineItemsEditor({ value, onChange }) {
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12, gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '.68rem', textTransform: 'uppercase', letterSpacing: '.07em', color: '#7a6e58' }}>Total Amount</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: "'Outfit',serif", color: 'var(--gold)' }}>S$ {fmt(total)}</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: "'Outfit',serif", color: total < 0 ? '#c0282e' : 'var(--gold)' }}>S$ {fmt(total)}</div>
         </div>
       </div>
       <div style={{ marginTop: 8, fontSize: '.75rem', color: 'var(--muted)' }}>
-        💡 Total is auto-calculated. Description is required. Qty is always at least 1 and you can increase it if needed.
+        💡 Total is auto-calculated. Description is required. Use negative Rate for deductions.
       </div>
     </>
   )

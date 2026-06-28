@@ -14,7 +14,6 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPre
   const [clientSuggestions, setClientSuggestions] = useState([])
   const [fromImport, setFromImport] = useState(false)
 
-  // Apply data sent from the Excel Import Helper, then mark it consumed so it doesn't re-fire
   useEffect(() => {
     if (!prefill) return
     setRows(prefill.rows.map(r => ({
@@ -26,7 +25,6 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPre
     }
     setFromImport(true)
     onPrefillConsumed?.()
-    // try to auto-fetch a matching client's address/number context if one already exists
   }, [prefill])
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
@@ -49,15 +47,12 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPre
     try {
       const { data } = await sb.from('clients').select('name,address').ilike('name', `%${form.name.trim()}%`).order('updated_at', { ascending: false }).limit(10)
       if (!data || data.length === 0) return
-      // deduplicate by name
       const unique = data.filter((r, i, arr) => arr.findIndex(x => x.name === r.name) === i)
       if (unique.length === 1) {
-        // single client — auto fill name + address
         f('name', unique[0].name)
         f('address', unique[0].address || '')
         setClientSuggestions([])
       } else {
-        // multiple clients — show dropdown to pick
         setClientSuggestions(unique)
       }
     } catch {}

@@ -13,7 +13,6 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    // Convert billing date: "dd-mm-yyyy" → "yyyy-mm-dd"
     let bd = inv.billingDate || ''
     if (bd && bd.includes('-') && bd.split('-')[0].length === 2) {
       const [d, m, y] = bd.split('-')
@@ -28,24 +27,21 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
         if (!raw) return ''
         const parts = raw.split(/[-\/]/)
         if (parts.length !== 3) return ''
-        if (parts[0].length === 4) return raw // already yyyy-mm-dd
-        // dd-mm-yyyy → yyyy-mm-dd
+        if (parts[0].length === 4) return raw
         return `${parts[2]}-${parts[1]}-${parts[0]}`
       })(),
       desc: li.description || li.desc || li.item || '',
       qty: String(parseFloat(li.qty || li.quantity || li.units || 1) || 1),
-      rate: String(parseFloat(li.unit_price || li.price || li.rate || li.unit_price || 0) || 0),
+      rate: String(parseFloat(li.unit_price || li.price || li.rate || 0) || 0),
     }))
 
     const invNum = inv.number ?? inv.invoice_number
-    // Always fetch fresh from DB
     if (invNum) {
       sb.from('line_items').select('*').eq('invoice_number', invNum)
         .then(({ data, error }) => {
           if (data && data.length > 0) {
             setRows(mapRows(data))
           } else {
-            // fallback to cache
             const cached = lineItemCache[invNum] || inv.items || []
             if (cached.length > 0) setRows(mapRows(cached))
           }
@@ -76,7 +72,6 @@ export default function EditInvoiceModal({ inv, lineItemCache, cfg, onClose, onS
       }).eq('invoice_number', inv.number ?? inv.invoice_number)
       if (e1) throw e1
 
-      // Replace line items
       const invNum = inv.number ?? inv.invoice_number
       await sb.from('line_items').delete().eq('invoice_number', invNum)
       if (validRows.length) {
