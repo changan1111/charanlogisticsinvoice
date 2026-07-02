@@ -140,7 +140,16 @@ export default function ExcelImportHelper({ onSendToInvoice }) {
                   <tr key={r.id}>
                     <td style={{ textAlign: 'center', color: '#7a6e58', fontWeight: 600 }}>{i + 1}</td>
                     <td><input type="date" value={r.date} onChange={e => update(r.id, 'date', e.target.value)} /></td>
-                    <td><input type="text" value={r.desc} onChange={e => update(r.id, 'desc', e.target.value)} placeholder="Description" /></td>
+                    <td style={{ verticalAlign: 'top', padding: '4px' }}>
+                      <textarea
+                        value={r.desc}
+                        onChange={e => { update(r.id, 'desc', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
+                        placeholder="Description"
+                        rows={1}
+                        style={{ resize: 'none', overflow: 'hidden', minHeight: 34, lineHeight: '1.5', width: '100%', boxSizing: 'border-box', padding: '5px 8px', fontFamily: 'inherit', fontSize: 'inherit', border: '1px solid #cbd5e0', borderRadius: 4, background: 'white', outline: 'none' }}
+                        ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' } }}
+                      />
+                    </td>
                     <td><input type="number" min="1" value={r.qty} onChange={e => update(r.id, 'qty', e.target.value)} style={{ textAlign: 'center' }} /></td>
                     <td><input type="number" min="0" step="0.01" value={r.rate} onChange={e => update(r.id, 'rate', e.target.value)} style={{ textAlign: 'right' }} /></td>
                     <td style={{ textAlign: 'right', fontWeight: 600 }}>

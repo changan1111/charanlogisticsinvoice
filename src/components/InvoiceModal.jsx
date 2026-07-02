@@ -120,7 +120,7 @@ export default function InvoiceModal({ inv, cfg, lineItemCache, onClose, onEdit,
                 return (
                   <tr key={li.id ?? i}>
                     {showDateCol && <td className="date-col">{liDate || '—'}</td>}
-                    <td>{d}</td>
+                    <td style={{ whiteSpace: 'pre-line' }}>{d}</td>
                     <td className="c">{q}</td>
                     <td className="r">{cur} {fmt(p)}</td>
                     <td className="r bold">{cur} {fmt(q * p)}</td>

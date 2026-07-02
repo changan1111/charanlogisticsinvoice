@@ -116,9 +116,10 @@ export function parseInvoiceExcel(arrayBuffer) {
         qty: '1',
       }
     } else {
-      // continuation line — append to the previous item's description
+      // continuation line — append to the previous item's description on a NEW LINE
+      // (still ONE line item; \n is only for legibility in the editor/invoice)
       if (currentItem) {
-        currentItem.desc += '; ' + descStr
+        currentItem.desc += '\n' + descStr
       } else {
         // No item open yet and no price — start a draft item with 0 rate so nothing is silently dropped
         currentItem = {

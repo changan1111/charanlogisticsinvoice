@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { sb } from '../supabase'
 import { todayStr } from '../utils/helpers'
 import LineItemsEditor from '../components/LineItemsEditor'
+import ExcelUploadButton from '../components/ExcelUploadButton'
 
 export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPrefillConsumed }) {
   const [form, setForm] = useState({
@@ -28,6 +29,15 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPre
   }, [prefill])
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+
+  // Excel import (in-place): append parsed rows BELOW existing ones.
+  // Untouched blank seed rows are dropped so imports don't land under empty lines.
+  const isEmptyRow = r => !(r.desc || '').trim() && !String(r.rate ?? '').trim() && !(r.date || '')
+  const handleExcelRows = (newRows) => {
+    setError(''); setSuccess('')
+    setRows(prev => [...prev.filter(r => !isEmptyRow(r)), ...newRows])
+    setFromImport(true)
+  }
 
   const fetchAutoNumber = async () => {
     try {
@@ -195,8 +205,9 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPre
       </div>
 
       <div className="pr-card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 10, flexWrap: 'wrap' }}>
           <div className="pr-card-title" style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }}>Line Items</div>
+          <ExcelUploadButton onRows={handleExcelRows} onError={msg => { setSuccess(''); setError(msg) }} />
         </div>
         <LineItemsEditor value={rows} onChange={setRows} />
       </div>
