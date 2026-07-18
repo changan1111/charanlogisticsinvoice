@@ -87,8 +87,19 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPre
     if (!invnum || !billingdate || !status || !name) {
       setError('Please fill all required fields marked with *.'); return
     }
-    const validRows = rows.filter(r => r.desc && r.qty && parseFloat(r.qty) > 0 && !isNaN(parseFloat(r.rate)))
-    if (!validRows.length) { setError('At least one line item with Description, Qty and Rate is required.'); return }
+
+    // date is now required, alongside desc/qty/rate
+    const validRows = rows.filter(r => r.date && r.desc && r.qty && parseFloat(r.qty) > 0 && !isNaN(parseFloat(r.rate)))
+    const rejectedCount = rows.filter(r => (r.desc || r.qty || r.rate) && !validRows.includes(r)).length
+
+    if (!validRows.length) {
+      setError('At least one line item with Date, Description, Qty and Rate is required.')
+      return
+    }
+    if (rejectedCount > 0) {
+      setError(`${rejectedCount} line item(s) skipped — Date, Description, Qty and Rate are all required. Please check highlighted rows.`)
+      return
+    }
 
     const [by, bm, bd] = billingdate.split('-')
     const billingDateFmt = `${bd}-${bm}-${by}`
@@ -109,22 +120,17 @@ export default function AddInvoicePanel({ cfg, onSaved, invoices, prefill, onPre
 
       if (validRows.length) {
         const liData = validRows.map(r => {
-          const dateRaw = r.date
-          let dateFmt = ''
-          if (dateRaw) {
-            const [y2, m2, d2] = dateRaw.split('-')
+          let dateFmt = null
+          if (r.date) {
+            const [y2, m2, d2] = r.date.split('-')
             dateFmt = `${d2}-${m2}-${y2}`
           }
           return {
             invoice_number: invnum,
             date: dateFmt,
-            li_date: dateFmt,
             description: r.desc,
-            desc: r.desc,
             qty: parseFloat(r.qty),
-            quantity: parseFloat(r.qty),
-            price: parseFloat(r.rate || 0),
-            rate: parseFloat(r.rate || 0),
+            unit_price: parseFloat(r.rate || 0),
           }
         })
         const { error: liErr } = await sb.from('line_items').insert(liData)
