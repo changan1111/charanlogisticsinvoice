@@ -6,24 +6,39 @@ Chart.register(...registerables)
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
-function parseYear(inv) {
+function getInvoiceDate(inv) {
   const d = inv.billingDate || inv.billing_date || inv.date || ''
-  // dd-mm-yyyy or yyyy-mm-dd
-  if (d.length >= 7) {
-    const parts = d.split(/[-\/]/)
-    if (parts[0].length === 4) return parseInt(parts[0])
-    if (parts[2]?.length === 4) return parseInt(parts[2])
-  }
-  return null
+  if (d.length < 7) return null
+  const parts = d.split(/[-\/]/)
+  const year = parts[0].length === 4 ? Number(parts[0]) : Number(parts[2])
+  const month = Number(parts[1])
+  if (!Number.isInteger(year) || month < 1 || month > 12) return null
+  return { year, month: month - 1 }
+}
+
+function parseYear(inv) {
+  return getInvoiceDate(inv)?.year ?? null
 }
 function parseMonth(inv) {
-  const d = inv.billingDate || inv.billing_date || inv.date || ''
-  if (d.length >= 7) {
-    const parts = d.split(/[-\/]/)
-    if (parts[0].length === 4) return parseInt(parts[1]) - 1
-    if (parts[2]?.length === 4) return parseInt(parts[1]) - 1
-  }
-  return null
+  return getInvoiceDate(inv)?.month ?? null
+}
+
+function invoiceAmount(inv) {
+  return Number.parseFloat(inv.total_amount ?? inv.total ?? inv.amount ?? 0) || 0
+}
+
+function formatPeriod(period) {
+  return `${MONTHS[period.month]} ${period.year}`
+}
+
+function periodKey(period) {
+  return period.year * 12 + period.month
+}
+
+function previousPeriod(period) {
+  return period.month === 0
+    ? { year: period.year - 1, month: 11 }
+    : { year: period.year, month: period.month - 1 }
 }
 
 export default function ChartModal({ invoices, cfg, onClose }) {
@@ -33,6 +48,36 @@ export default function ChartModal({ invoices, cfg, onClose }) {
   const chartInst           = useRef(null)
 
   const years = [...new Set(invoices.map(parseYear).filter(Boolean))].sort().reverse()
+
+  const comparison = (() => {
+    const dated = invoices.map(inv => ({ inv, period: getInvoiceDate(inv) })).filter(row => row.period)
+    if (!dated.length) return null
+
+    const current = dated.reduce((latest, row) => periodKey(row.period) > periodKey(latest) ? row.period : latest, dated[0].period)
+    const previous = previousPeriod(current)
+    const currentRows = dated.filter(row => periodKey(row.period) === periodKey(current)).map(row => row.inv)
+    const previousRows = dated.filter(row => periodKey(row.period) === periodKey(previous)).map(row => row.inv)
+    const currentTotal = currentRows.reduce((sum, inv) => sum + invoiceAmount(inv), 0)
+    const previousTotal = previousRows.reduce((sum, inv) => sum + invoiceAmount(inv), 0)
+    const difference = currentTotal - previousTotal
+    const percentage = previousTotal ? (difference / previousTotal) * 100 : null
+
+    const clients = new Map()
+    ;[...currentRows, ...previousRows].forEach(inv => {
+      const name = inv.client_name || inv.name || 'Unassigned client'
+      if (!clients.has(name)) clients.set(name, { name, current: 0, previous: 0 })
+      const client = clients.get(name)
+      if (currentRows.includes(inv)) client.current += invoiceAmount(inv)
+      else client.previous += invoiceAmount(inv)
+    })
+    const drivers = [...clients.values()]
+      .map(client => ({ ...client, difference: client.current - client.previous }))
+      .filter(client => client.difference !== 0)
+      .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference))
+      .slice(0, 3)
+
+    return { current, previous, currentTotal, previousTotal, difference, percentage, currentCount: currentRows.length, previousCount: previousRows.length, drivers }
+  })()
 
   const monthData = MONTHS.map((m, i) => {
     const mInvs = invoices.filter(inv => parseYear(inv) === year && parseMonth(inv) === i)
@@ -89,6 +134,43 @@ export default function ChartModal({ invoices, cfg, onClose }) {
             <div className="cs-card"><div className="cs-lbl">Year Total</div><div className="cs-val">S$ {fmt(yearTotal)}</div></div>
             <div className="cs-card"><div className="cs-lbl">Paid</div><div className="cs-val c-paid">S$ {fmt(yearPaid)}</div></div>
           </div>
+          {comparison && (
+            <section className="month-comparison" aria-label="Month-on-month comparison">
+              <div className="month-comparison-head">
+                <div>
+                  <div className="month-comparison-title">Month-on-month summary</div>
+                  <div className="month-comparison-sub">{formatPeriod(comparison.current)} compared with {formatPeriod(comparison.previous)}</div>
+                </div>
+                <span className={`month-change ${comparison.difference > 0 ? 'up' : comparison.difference < 0 ? 'down' : 'flat'}`}>
+                  {comparison.difference > 0 ? '▲' : comparison.difference < 0 ? '▼' : '•'} S$ {fmt(Math.abs(comparison.difference))}
+                  {comparison.percentage !== null && ` (${Math.abs(comparison.percentage).toFixed(1)}%)`}
+                </span>
+              </div>
+              <div className="month-comparison-metrics">
+                <div><span>Current month</span><strong>S$ {fmt(comparison.currentTotal)}</strong></div>
+                <div><span>Previous month</span><strong>S$ {fmt(comparison.previousTotal)}</strong></div>
+                <div><span>Invoices</span><strong>{comparison.currentCount} vs {comparison.previousCount}</strong></div>
+              </div>
+              <p className="month-comparison-text">
+                {comparison.previousTotal === 0
+                  ? `${formatPeriod(comparison.current)} has S$ ${fmt(comparison.currentTotal)} across ${comparison.currentCount} invoice${comparison.currentCount === 1 ? '' : 's'}; there were no invoices recorded in the prior month.`
+                  : comparison.difference === 0
+                    ? `Invoice value was unchanged month-on-month, with ${comparison.currentCount} invoice${comparison.currentCount === 1 ? '' : 's'} this month versus ${comparison.previousCount} last month.`
+                    : `${comparison.difference > 0 ? 'Increase' : 'Decrease'} of S$ ${fmt(Math.abs(comparison.difference))} was recorded, alongside ${comparison.currentCount > comparison.previousCount ? 'more' : comparison.currentCount < comparison.previousCount ? 'fewer' : 'the same number of'} invoices (${comparison.currentCount} vs ${comparison.previousCount}).`}
+              </p>
+              {comparison.drivers.length > 0 && (
+                <div className="month-drivers">
+                  <span className="month-drivers-label">Main drivers</span>
+                  {comparison.drivers.map(driver => (
+                    <div className="month-driver" key={driver.name}>
+                      <span>{driver.name}</span>
+                      <strong className={driver.difference > 0 ? 'up' : 'down'}>{driver.difference > 0 ? '+' : '−'}S$ {fmt(Math.abs(driver.difference))}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
           {view !== 'table' ? (
             <div className="chart-wrap"><canvas ref={chartRef} /></div>
           ) : (

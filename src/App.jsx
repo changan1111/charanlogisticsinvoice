@@ -7,6 +7,7 @@ import InvoicesPanel from './pages/InvoicesPanel'
 import PayrollPanel from './pages/PayrollPanel'
 import QuotationPanel from './pages/QuotationPanel'
 import WhatsAppPanel from './pages/WhatsAppPanel'
+import InsightsPanel from './pages/InsightsPanel'
 import AddInvoicePanel from './pages/AddInvoicePanel'
 import ExcelImportHelper from './pages/ExcelImportHelper'
 import InvoiceModal from './components/InvoiceModal'
@@ -168,6 +169,7 @@ export default function App() {
           {panel === 'payroll' && <PayrollPanel cfg={cfg} />}
           {panel === 'quotation' && <QuotationPanel cfg={cfg} />}
           {panel === 'whatsapp' && <WhatsAppPanel />}
+          {panel === 'insights' && <InsightsPanel invoices={invoices} />}
           {panel === 'excelimport' && (
             <ExcelImportHelper
               onSendToInvoice={(data) => {

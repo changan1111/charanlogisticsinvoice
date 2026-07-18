@@ -1,5 +1,6 @@
 const TAB_ITEMS = [
   { id: 'invoices',   icon: '📋', label: 'Invoices' },
+  { id: 'insights',   icon: '🔎', label: 'Insights' },
   { id: 'addinvoice', icon: '➕', label: 'Add' },
   { id: 'excelimport',icon: '📊', label: 'Import' },
   { id: 'payroll',    icon: '💰', label: 'Payroll' },
@@ -12,6 +13,7 @@ export default function Sidebar({ active, onSelect, onSignOut, open }) {
   const items = [
     { section: 'Invoicing' },
     { id: 'invoices',    icon: '📋', label: 'Invoices' },
+    { id: 'insights',    icon: '🔎', label: 'Insights' },
     { divider: true },
     { section: 'Payroll' },
     { id: 'payroll',     icon: '💰', label: 'Payroll' },
